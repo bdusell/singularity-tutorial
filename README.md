@@ -1,4 +1,4 @@
-# Installing Software with Singularity
+# How to Install Literally Anything Using Containers
 
 Brian DuSell<br>
 Apr 9, 2019
@@ -6,6 +6,25 @@ Apr 9, 2019
 Grad Tutorial Talk<br>
 Dept. of Computer Science and Engineering<br>
 University of Notre Dame
+
+## Abstract
+
+Have you ever spent an inordinate amount of time trying to install
+something on the CRC without root privileges? Have you ever wrecked your
+computer trying to update CUDA? Have you ever wished you could install two
+versions of the same package at once? If so, containers may be what's missing
+in your life. In this talk, I will show you how to install software using
+Singularity, a container system that allows you to install software in a fully
+portable, self-contained Linux environment where you have full administrative
+rights. Singularity can be installed on any Linux machine (with techniques
+available for running it on Windows and Mac) and is available on the CRC, thus
+ensuring that your code runs in a consistent environment no matter which
+machine you run it on. Singularity is compatible with Docker images and lets
+you effortlessly install any CUDA version of your choosing provided that your
+Nvidia drivers have been set up properly. My tutorial will consist of walking
+you through using Singularity to run a GPU-accelerated PyTorch program for deep
+learning on the CRC. Note: If you want to follow along, please ensure that you
+have a directory under the `/scratch365` directory on the CRC's filesystem.
 
 ## Introduction
 
@@ -290,20 +309,75 @@ Singularity version-1.sif:~/singularity-tutorial/examples/xor> python3 train_xor
 
 ## Running an Image on the CRC
 
-* TODO scratch365
-* TODO remember to bind directories outside of your home directory, or you'll get
-  permission denied errors
+Let's try running the same image on the CRC. Log in to one of the frontends
+using `ssh -X`. The `-X` is necessary to get the plot to appear.
+
+```bash
+ssh -X yournetid@crcfe01.crc.nd.edu
+```
+
+Then download the image to your `/scratch365` directory. One gotcha is that the
+`.sif` file *must* be stored on the scratch365 device for Singularity to work.
+
+```bash
+singularity pull /scratch365/$USER/version-1.sif library://brian/default/singularity-tutorial:version-1
+```
+
+Next, download the code to your home directory.
+
+```bash
+git clone https://github.com/bdusell/singularity-tutorial.git ~/singularity-tutorial
+cd ~/singularity-tutorial
+```
+
+```bash
+singularity exec /scratch365/$USER/version-1.sif python3 examples/xor/train_xor.py
+```
+
+You should get the same plot from before to show up. Note that it is not
+possible to do this using the Python installations provided by the CRC, since
+they do not include Tk, which is required my matplotlib. I have found this
+extremely useful for making plots from data I have stored on the CRC without
+needing to download the data to another machine.
+
+## A Beefier PyTorch Program
+
+As an example of a program that benefits from GPU acceleration, we will be
+running the official
+[`word_language_model`](https://github.com/pytorch/examples/tree/master/word_language_model)
+example PyTorch program, which I have included at
+[`examples/language-model`](examples/language-model).
+This program trains an
+[LSTM](https://en.wikipedia.org/wiki/Long_short-term_memory)
+[language model](https://en.wikipedia.org/wiki/Language_model)
+on a corpus of Wikipedia text.
 
 ## Adding GPU Support
+
+In order to add GPU support, we need to include CUDA in our image. In
+Singularity, this is delightfully simple. We just need to pick one of
+[Nvidia's official Docker images](https://hub.docker.com/r/nvidia/cuda)
+to base our image on. Again, the easiest way to install library X is usually to
+Google "X docker" and pick an image from the README or tags page on Docker Hub.
+
+The README lists several tags. They tend to indicate variants of the image that
+have different components and different versions of things installed. Let's
+pick the one that is based on CUDA 10.1, uses Ubuntu 18.04, and includes cuDNN
+(which PyTorch can leverage for highly optimized neural network operations).
+Let's also pick the `devel` version, since PyTorch needs to compile itself in
+the container. This is the image tagged `10.1-cudnn7-devel-ubuntu18.04`. Since
+the image comes from the nvidia/cuda repository, the full image name is
+`nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04`.
+
+Our definition file now looks like this:
+
+```
+
+```
 
 * make sure to respect `CUDA_VISIBLE_DEVICES`
 
 Maybe:
 
-We will be running the official [`word_language_model`](word_language_model/)
-example PyTorch program. This program trains an
-[LSTM](https://en.wikipedia.org/wiki/Long_short-term_memory)
-[language model](https://en.wikipedia.org/wiki/Language_model)
-on a corpus of Wikipedia text.
 
 * if there's time, Docker
