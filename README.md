@@ -135,13 +135,13 @@ Once you've uploaded your image to the CRC, you can submit a batch job that
 runs `singularity exec` with the image file you created and the command you
 want to run. That's it!
 
-## A PyTorch Program
+## A Simple PyTorch Program
 
 I have included a PyTorch program,
 [`train_xor.py`](examples/xor/train_xor.py),
-that trains a neural network to compute the XOR function and then plots its
-performance as a function of training iterations. It depends on the Python
-modules `torch`, `numpy`, and `matplotlib`.
+that trains a neural network to compute the XOR function and then plots the
+loss as a function of training time. It can also save the model to a file. It
+depends on the Python modules `torch`, `numpy`, and `matplotlib`.
 
 ## Installing Singularity
 
@@ -228,7 +228,7 @@ cd examples/xor
 sudo singularity build version-1.sif version-1.def
 ```
 
-[View the screencast](https://bdusell.github.io/singularity-tutorial/screencast1.html)
+[View the screencast](https://bdusell.github.io/singularity-tutorial/casts/version-1.html)
 
 This ran the commands we defined in the `%post` section inside a container and
 afterwards saved the state of the container in the image `version-1.sif`.
@@ -238,12 +238,55 @@ afterwards saved the state of the container in the image `version-1.sif`.
 Let's run our PyTorch program in a container based on the image we just built.
 
 ```bash
-singularity exec version-1.sif python3 train_xor.py
+singularity exec version-1.sif python3 train_xor.py --output model.pt
 ```
 
-* TODO directories that it binds to
-* TODO `singularity shell`
-* TODO environment variables are inherited, unlike Docker
+This program does not take long to run. Once it finishes, it should open a
+window with a plot of the model's loss and accuracy over time.
+
+[![asciicast](https://asciinema.org/a/Lqq0AsJSwVgFoo1Hr8S7euMe5.svg)](https://asciinema.org/a/Lqq0AsJSwVgFoo1Hr8S7euMe5)
+
+![Plot](images/plot.png)
+
+The trained model should also be saved in the file `model.pt`. Note that even
+though the program ran in a container, it was able to write a file to the host
+file system that remained after the program exited and the container was shut
+down. If you are familiar with Docker, you probably know that you cannot write
+files to the host in this way unless you explicitly **bind mount** two
+directories in the host and container file system. Bind mounting makes a file
+or directory on the host system synonymous with one in the conatiner.
+
+For convenience, Singularity
+[binds a few important directories by
+default](https://www.sylabs.io/guides/3.0/user-guide/bind_paths_and_mounts.html):
+
+* Your home directory
+* The current working directory
+* `/tmp`
+* `/proc`
+* `/sys`
+* `/dev`
+
+You can add to or override these settings if you wish using the
+[`--bind` flag](https://www.sylabs.io/guides/3.0/user-guide/bind_paths_and_mounts.html#specifying-bind-paths)
+to `singularity exec`. This is important to remember if you want to access a
+file that is outside of your home directory on the CRC -- otherwise you may end
+up with cryptic persmission errors.
+
+It is also important to know that, unlike Docker, environment variables are
+inherited inside the container for convenience.
+
+## Running an Interactive Shell
+
+You can also open up a shell inside the container and run commands there. You
+can `exit` when you're done. Note that since your home directory is
+bind-mounted, the shell inside the container will run your shell's startup file
+(e.g. `.bashrc`).
+
+```
+$ singularity shell version-1.sif
+Singularity version-1.sif:~/singularity-tutorial/examples/xor> python3 train_xor.py
+```
 
 ## Running an Image on the CRC
 
