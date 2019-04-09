@@ -2,3 +2,4 @@
 *.pt
 *.swp
 __pycache__/
+.venv/

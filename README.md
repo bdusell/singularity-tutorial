@@ -357,7 +357,7 @@ on a corpus of Wikipedia text.
 In order to add GPU support, we need to include CUDA in our image. In
 Singularity, this is delightfully simple. We just need to pick one of
 [Nvidia's official Docker images](https://hub.docker.com/r/nvidia/cuda)
-to base our image on. Again, the easiest way to install library X is usually to
+to base our image on. Again, the easiest way to install library X is often to
 Google "X docker" and pick an image from the README or tags page on Docker Hub.
 
 The README lists several tags. They tend to indicate variants of the image that
@@ -403,7 +403,7 @@ sudo singularity build version-2.sif version-2.def
 
 We run the image like before, except that we have to add the `--nv` flag to
 allow the container to access the Nvidia drivers on the host in order to use
-the GPU. But that's all we need to get GPU support working. Not bad!
+the GPU. That's all we need to get GPU support working. Not bad!
 
 This program takes a while to run. Do not run it on the CRC frontend. When I
 run one epoch on my workstation (which has a GPU), the output looks like this:
@@ -436,10 +436,12 @@ $ singularity exec --nv version-2.sif python3 main.py --cuda --epochs 1
 ## Running a GPU program on the CRC
 
 Finally, I will show you how to run this program on the CRC's GPU queue.
-On the CRC, download the updated image.
+This image is too big to be hosted on the Singularity Library, so you need to
+copy it from my home directory. We will address this size issue later on.
 
 ```bash
-
+cp /afs/crc.nd.edu/user/b/bdusell1/Public/singularity-tutorial/version-2.sif
+/scratch365/$USER/version-2.sif
 ```
 
 Then, submit a job to run this program on the GPU queue. For convenience, I've
@@ -482,11 +484,63 @@ manager). It records the libraries your project depends on in text files named
 of the massive libraries themselves.
 
 Here is the
-[stripped down version](examples/language-model/version-3.def)
+[new version](examples/language-model/version-3.def)
 of our definition file:
 
 ```
+BootStrap: docker
+From: nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04
 
+%post
+    # Downloads the latest package lists (important).
+    apt-get update -y
+    # Runs apt-get while ensuring that there are no user prompts that would
+    # cause the build process to hang.
+    # python3-tk is required by matplotlib.
+    # python3-dev is needed to require some packages.
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        python3 \
+        python3-tk \
+        python3-pip \
+        python3-dev
+    # Reduce the size of the image by deleting the package lists we downloaded,
+    # which are useless now.
+    rm -rf /var/lib/apt/lists/*
+    # Install Pipenv.
+    pip3 install pipenv
+
+%environment
+    # Pipenv requires a certain terminal encoding.
+    export LANG=C.UTF-8
+    export LC_ALL=C.UTF-8
+    # This configures Pipenv to store the packages in the current working
+    # directory.
+    export PIPENV_VENV_IN_PROJECT=1
+```
+
+On the CRC, download the new image.
+
+```bash
+singularity pull /scratch365/$USER/version-3.sif library://brian/default/singularity-tutorial:version-3
+```
+
+Now we can use the container to install our Python libraries into the current
+working directory. We do this by running `pipenv
+install`.
+
+```bash
+singularity exec /scratch365/$USER/version-3.sif pipenv install torch numpy matplotlib
+```
+
+This may take a while. When it is finished, it will have installed the
+libraries in a directory named `.venv`. The benefit of installing packages like
+this is that you can install new ones without re-building the image, and you
+can re-use the image for multiple projects. The `.sif` file is smaller too.
+
+When you're done, you can test it out by submitting a GPU job.
+
+```bash
+bash submit-gpu-job-version-3.bash
 ```
 
 ## Conclusion
