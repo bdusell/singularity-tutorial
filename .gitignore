@@ -1,3 +1,4 @@
 *.sif
 *.pt
 *.swp
+__pycache__/
