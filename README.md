@@ -549,6 +549,20 @@ python`, which runs the program inside the environment that Pipenv manages.
 bash submit-gpu-job-version-3.bash
 ```
 
+## Docker
+
+If this container stuff interests you, you might be interested in
+[Docker](https://www.docker.com/)
+too. Docker is not available on the CRC, but it may prove useful elsewhere.
+For example, I've used it to compile PyTorch from source before. Docker has
+its own set of idiosyncrasies, but a good place to start is the
+[Docker documentation](https://docs.docker.com/).
+
+This would be a good time to plug my
+[dockerdev](https://github.com/bdusell/dockerdev)
+project, which is a bash library that sets up a streamlined workflow for using
+Docker containers as development environments.
+
 ## Conclusion
 
 By now I think I have shown you that the sky is the limit when it comes to
