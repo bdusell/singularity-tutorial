@@ -537,7 +537,9 @@ libraries in a directory named `.venv`. The benefit of installing packages like
 this is that you can install new ones without re-building the image, and you
 can re-use the image for multiple projects. The `.sif` file is smaller too.
 
-When you're done, you can test it out by submitting a GPU job.
+When you're done, you can test it out by submitting a GPU job. If you look at
+the script, you will see that we replace the `python3` command with `pipenv run
+python`, which runs the program inside the environment that Pipenv manages.
 
 ```bash
 bash submit-gpu-job-version-3.bash
