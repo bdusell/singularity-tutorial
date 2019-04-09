@@ -327,10 +327,12 @@ Next, download the code to your home directory.
 
 ```bash
 git clone https://github.com/bdusell/singularity-tutorial.git ~/singularity-tutorial
-cd ~/singularity-tutorial
 ```
 
+Run the program.
+
 ```bash
+cd ~/singularity-tutorial/examples/xor
 singularity exec /scratch365/$USER/version-1.sif python3 examples/xor/train_xor.py
 ```
 
@@ -430,7 +432,6 @@ $ singularity exec --nv version-2.sif python3 main.py --cuda --epochs 1
 =========================================================================================
 | End of training | test loss  5.46 | test ppl   235.49
 =========================================================================================
-
 ```
 
 ## Running a GPU program on the CRC
@@ -440,8 +441,7 @@ This image is too big to be hosted on the Singularity Library, so you need to
 copy it from my home directory. We will address this size issue later on.
 
 ```bash
-cp /afs/crc.nd.edu/user/b/bdusell1/Public/singularity-tutorial/version-2.sif
-/scratch365/$USER/version-2.sif
+cp /afs/crc.nd.edu/user/b/bdusell1/Public/singularity-tutorial/version-2.sif /scratch365/$USER/version-2.sif
 ```
 
 Then, submit a job to run this program on the GPU queue. For convenience, I've
