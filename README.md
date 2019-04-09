@@ -453,7 +453,7 @@ bash submit-gpu-job-version-2.bash
 ```
 
 Check back in a while to verify that the job completed successfully. The output
-will be written to `output.txt`.
+will be written to `output-version-2.txt`.
 
 Something you should keep in mind is that, by default, if there are multiple
 GPUs available on the system, PyTorch grabs the first one it sees (some
@@ -472,7 +472,7 @@ Now that you know the basics of how to run a GPU job on the CRC, here's a tip
 for managing Python modules. There's a problem with our current workflow.
 Every time we want to install a new Python library, we have to re-build the
 image. We should only need to re-build the image when we install a package with
-`apt-get` or inherit from a different base imagei -- in other words, actions
+`apt-get` or inherit from a different base image -- in other words, actions
 that require root privileges. It would be nice if we could store our Python
 libraries in the current working directory using a **package manager**, and
 rely on the image only for the basic Ubuntu/CUDA/Python environment.
@@ -497,7 +497,7 @@ From: nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04
     # Runs apt-get while ensuring that there are no user prompts that would
     # cause the build process to hang.
     # python3-tk is required by matplotlib.
-    # python3-dev is needed to require some packages.
+    # python3-dev is needed to install some packages.
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         python3 \
         python3-tk \
