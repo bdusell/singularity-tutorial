@@ -338,7 +338,7 @@ singularity exec /scratch365/$USER/version-1.sif python3 examples/xor/train_xor.
 
 You should get the same plot from before to show up. Note that it is not
 possible to do this using the Python installations provided by the CRC, since
-they do not include Tk, which is required my matplotlib. I have found this
+they do not include Tk, which is required by matplotlib. I have found this
 extremely useful for making plots from data I have stored on the CRC without
 needing to download the data to another machine.
 
