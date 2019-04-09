@@ -33,7 +33,7 @@ a containerization system for scientific computing environments that is
 available on Notre Dame's CRC computing cluster. Containers allow you to
 package the environment that your code depends on inside of a portable unit.
 This is extremely useful for ensuring that your code can be run portably
-on other machines. It is also usefuly for installing software, packages,
+on other machines. It is also useful for installing software, packages,
 libraries, etc. in environments where you do not have root privileges, like the
 CRC. I will show you how to install PyTorch with GPU support inside of a
 container and run a simple PyTorch program to train a neural net.
