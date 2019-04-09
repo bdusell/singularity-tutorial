@@ -369,15 +369,128 @@ the container. This is the image tagged `10.1-cudnn7-devel-ubuntu18.04`. Since
 the image comes from the nvidia/cuda repository, the full image name is
 `nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04`.
 
-Our definition file now looks like this:
+Our definition file now looks
+[like this](examples/language-model/version-2.def). Although we don't need it,
+I kept matplotlib for good measure.
+
+```
+Bootstrap: docker
+From: nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04
+
+%post
+    # Downloads the latest package lists (important).
+    apt-get update -y
+    # Runs apt-get while ensuring that there are no user prompts that would
+    # cause the build process to hang.
+    # python3-tk is required by matplotlib.
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        python3 \
+        python3-tk \
+        python3-pip
+    # Reduce the size of the image by deleting the package lists we downloaded,
+    # which are useless now.
+    rm -rf /var/lib/apt/lists/*
+    # Install Python modules.
+    pip3 install torch numpy matplotlib
+```
+
+We build the image as usual.
+
+```bash
+cd examples/language-model
+sudo singularity build version-2.sif version-2.def
+```
+
+We run the image like before, except that we have to add the `--nv` flag to
+allow the container to access the Nvidia drivers on the host in order to use
+the GPU. But that's all we need to get GPU support working. Not bad!
+
+This program takes a while to run. Do not run it on the CRC frontend. When I
+run one epoch on my workstation (which has a GPU), the output looks like this:
+
+```
+$ singularity exec --nv version-2.sif python3 main.py --cuda --epochs 1
+| epoch   1 |   200/ 2983 batches | lr 20.00 | ms/batch 45.68 | loss  7.63 | ppl  2050.44
+| epoch   1 |   400/ 2983 batches | lr 20.00 | ms/batch 45.11 | loss  6.85 | ppl   945.93
+| epoch   1 |   600/ 2983 batches | lr 20.00 | ms/batch 45.03 | loss  6.48 | ppl   653.61
+| epoch   1 |   800/ 2983 batches | lr 20.00 | ms/batch 46.43 | loss  6.29 | ppl   541.05
+| epoch   1 |  1000/ 2983 batches | lr 20.00 | ms/batch 45.50 | loss  6.14 | ppl   464.91
+| epoch   1 |  1200/ 2983 batches | lr 20.00 | ms/batch 44.99 | loss  6.06 | ppl   429.36
+| epoch   1 |  1400/ 2983 batches | lr 20.00 | ms/batch 45.27 | loss  5.95 | ppl   382.01
+| epoch   1 |  1600/ 2983 batches | lr 20.00 | ms/batch 45.09 | loss  5.95 | ppl   382.31
+| epoch   1 |  1800/ 2983 batches | lr 20.00 | ms/batch 45.25 | loss  5.80 | ppl   330.43
+| epoch   1 |  2000/ 2983 batches | lr 20.00 | ms/batch 45.08 | loss  5.78 | ppl   324.42
+| epoch   1 |  2200/ 2983 batches | lr 20.00 | ms/batch 45.11 | loss  5.66 | ppl   288.16
+| epoch   1 |  2400/ 2983 batches | lr 20.00 | ms/batch 45.14 | loss  5.67 | ppl   291.00
+| epoch   1 |  2600/ 2983 batches | lr 20.00 | ms/batch 45.21 | loss  5.66 | ppl   287.51
+| epoch   1 |  2800/ 2983 batches | lr 20.00 | ms/batch 45.02 | loss  5.54 | ppl   255.68
+-----------------------------------------------------------------------------------------
+| end of epoch   1 | time: 140.54s | valid loss  5.54 | valid ppl   254.69
+-----------------------------------------------------------------------------------------
+=========================================================================================
+| End of training | test loss  5.46 | test ppl   235.49
+=========================================================================================
+
+```
+
+## Running a GPU program on the CRC
+
+Finally, I will show you how to run this program on the CRC's GPU queue.
+On the CRC, download the updated image.
+
+```bash
+
+```
+
+Then, submit a job to run this program on the GPU queue. For convenience, I've
+included a script to run the submission command.
+
+```bash
+cd ~/singularity-tutorial/examples/language-model
+bash submit-gpu-job-version-2.bash
+```
+
+Check back in a while to verify that the job completed successfully. The output
+will be written to `output.txt`.
+
+Something you should keep in mind is that, by default, if there are multiple
+GPUs available on the system, PyTorch grabs the first one it sees (some
+toolkits grab all of them). However, the CRC assigns each job its own GPU,
+which is not necessarily the one that PyTorch would pick. If PyTorch does not
+respect this assignment, there can be contention among different jobs. You can
+control which GPUs PyTorch has access to using the environment variable
+`CUDA_VISIBLE_DEVICES` to a space-separated list of numbers. The CRC now sets
+this environment variable automatically, and since Singularity inherits
+environment variables, you actually don't need to do anything. It's just
+something you should know about, since there is potential for abuse.
+
+## Separating Python modules from the image
+
+Now that you know the basics of how to run a GPU job on the CRC, here's a tip
+for managing Python modules. There's a problem with our current workflow.
+Every time we want to install a new Python library, we have to re-build the
+image. We should only need to re-build the image when we install a package with
+`apt-get` or inherit from a different base imagei -- in other words, actions
+that require root privileges. It would be nice if we could store our Python
+libraries in the current working directory using a **package manager**, and
+rely on the image only for the basic Ubuntu/CUDA/Python environment.
+
+[Pipenv](https://github.com/pypa/pipenv) is a package manager for Python. It's
+like the Python equivalent of npm (Node.js package manager) or gem (Ruby package
+manager). It records the libraries your project depends on in text files named
+`Pipfile` and `Pipfile.lock`, which you can commit to version control in lieu
+of the massive libraries themselves.
+
+Here is the
+[stripped down version](examples/language-model/version-3.def)
+of our definition file:
 
 ```
 
 ```
 
-* make sure to respect `CUDA_VISIBLE_DEVICES`
+## Conclusion
 
-Maybe:
-
-
-* if there's time, Docker
+By now I think I have shown you that the sky is the limit when it comes to
+containers. Hopefully this will prove useful to your research. If you like, you
+can show your appreciation by leaving a star on GitHub. :)
