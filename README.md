@@ -273,7 +273,7 @@ file system that remained after the program exited and the container was shut
 down. If you are familiar with Docker, you probably know that you cannot write
 files to the host in this way unless you explicitly **bind mount** two
 directories in the host and container file system. Bind mounting makes a file
-or directory on the host system synonymous with one in the conatiner.
+or directory on the host system synonymous with one in the container.
 
 For convenience, Singularity
 [binds a few important directories by
