@@ -403,6 +403,8 @@ cd examples/language-model
 sudo singularity build version-2.sif version-2.def
 ```
 
+[View the screencast](https://bdusell.github.io/singularity-tutorial/casts/version-2.html)
+
 We run the image like before, except that we have to add the `--nv` flag to
 allow the container to access the Nvidia drivers on the host in order to use
 the GPU. That's all we need to get GPU support working. Not bad!
@@ -531,6 +533,8 @@ install`.
 ```bash
 singularity exec /scratch365/$USER/version-3.sif pipenv install torch numpy matplotlib
 ```
+
+[![asciicast](https://asciinema.org/a/cywx1Ta3XpO89DvwaE0MaogDo.svg)](https://asciinema.org/a/cywx1Ta3XpO89DvwaE0MaogDo)
 
 This may take a while. When it is finished, it will have installed the
 libraries in a directory named `.venv`. The benefit of installing packages like
