@@ -481,9 +481,15 @@ rely on the image only for the basic Ubuntu/CUDA/Python environment.
 
 [Pipenv](https://github.com/pypa/pipenv) is a package manager for Python. It's
 like the Python equivalent of npm (Node.js package manager) or gem (Ruby package
-manager). It records the libraries your project depends on in text files named
-`Pipfile` and `Pipfile.lock`, which you can commit to version control in lieu
-of the massive libraries themselves.
+manager). It keeps track of the libraries your project depends on in text files
+named `Pipfile` and `Pipfile.lock`, which you can commit to version control in
+lieu of the massive libraries themselves. Every time you run `pipenv install
+<library>`, Pipenv will update the `Pipfile` and download the library locally.
+The important thing is that, rather than putting the library in a system-wide
+location, Pipenv installs the library in a *local* directory called `.venv`.
+The benefit of this is that the libraries are stored *with* your project, but
+they are not part of the image. The image is merely the vehicle for running
+them.
 
 Here is the
 [new version](examples/language-model/version-3.def)
@@ -527,8 +533,7 @@ singularity pull /scratch365/$USER/version-3.sif library://brian/default/singula
 ```
 
 Now we can use the container to install our Python libraries into the current
-working directory. We do this by running `pipenv
-install`.
+working directory. We do this by running `pipenv install`.
 
 ```bash
 singularity exec /scratch365/$USER/version-3.sif pipenv install torch numpy matplotlib
