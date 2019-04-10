@@ -463,10 +463,10 @@ toolkits grab all of them). However, the CRC assigns each job its own GPU,
 which is not necessarily the one that PyTorch would pick. If PyTorch does not
 respect this assignment, there can be contention among different jobs. You can
 control which GPUs PyTorch has access to using the environment variable
-`CUDA_VISIBLE_DEVICES` to a space-separated list of numbers. The CRC now sets
-this environment variable automatically, and since Singularity inherits
-environment variables, you actually don't need to do anything. It's just
-something you should know about, since there is potential for abuse.
+`CUDA_VISIBLE_DEVICES`, which can be set to a space-separated list of numbers.
+The CRC now sets this environment variable automatically, and since Singularity
+inherits environment variables, you actually don't need to do anything. It's
+just something you should know about, since there is potential for abuse.
 
 ## Separating Python modules from the image
 
