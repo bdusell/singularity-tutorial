@@ -1,30 +1,30 @@
-# How to Install Literally Anything: A Practical Guide to Singularity
+# How to Install Literally Anything Using Containers
 
-Brian DuSell
+Brian DuSell<br>
+Apr 9, 2019
 
-Note: For a version of this tutorial specially tailored for the CRC computing
-cluster at the University of Notre Dame, please see
-[README-ND.md](README-ND.md).
+Grad Tutorial Talk<br>
+Dept. of Computer Science and Engineering<br>
+University of Notre Dame
 
 ## Abstract
 
-Have you ever spent an inordinate amount of time trying to install something on
-your HPC cluster without root privileges? Have you ever wrecked your computer
-trying to update CUDA? Have you ever wished you could install two versions of
-the same package at once? If so, containers may be what's missing in your life.
-In this talk, I will show you how to install software using Singularity, an
-HPC-centric container system that, like Docker, allows you to install software
-in a portable, self-contained Linux environment where you have full
-administrative rights. Singularity can be installed on any Linux machine (with
-techniques available for running it on Windows and Mac) and is becoming
-increasingly available on HPC clusters, thus ensuring that your code can run
-in a consistent environment no matter which machine you run it on. Singularity
-is compatible with Docker images and can make installing tricky libraries,
-such as CUDA, as simple as pulling a pre-built image. My tutorial will include
-a walkthrough of using Singularity to run a GPU-accelerated PyTorch program on
-an HPC cluster, as well as general tips for setting up an efficient workflow.
-
-Slides available at [slides.pdf](slides.pdf).
+Have you ever spent an inordinate amount of time trying to install
+something on the CRC without root privileges? Have you ever wrecked your
+computer trying to update CUDA? Have you ever wished you could install two
+versions of the same package at once? If so, containers may be what's missing
+in your life. In this talk, I will show you how to install software using
+Singularity, a container system that allows you to install software in a fully
+portable, self-contained Linux environment where you have full administrative
+rights. Singularity can be installed on any Linux machine (with techniques
+available for running it on Windows and Mac) and is available on the CRC, thus
+ensuring that your code runs in a consistent environment no matter which
+machine you run it on. Singularity is compatible with Docker images and lets
+you effortlessly install any CUDA version of your choosing provided that your
+Nvidia drivers have been set up properly. My tutorial will consist of walking
+you through using Singularity to run a GPU-accelerated PyTorch program for deep
+learning on the CRC. Note: If you want to follow along, please ensure that you
+have a directory under the `/scratch365` directory on the CRC's filesystem.
 
 ## Introduction
 
