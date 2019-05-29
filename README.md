@@ -30,44 +30,70 @@ Slides available at [slides.pdf](slides.pdf).
 
 This tutorial will introduce you to [Singularity](https://www.sylabs.io/singularity/),
 a containerization system for scientific computing environments that is
-available on Notre Dame's CRC computing cluster. Containers allow you to
+available on many scientific computing clusters. Containers allow you to
 package the environment that your code depends on inside of a portable unit.
 This is extremely useful for ensuring that your code can be run portably
 on other machines. It is also useful for installing software, packages,
-libraries, etc. in environments where you do not have root privileges, like the
-CRC. I will show you how to install PyTorch with GPU support inside of a
-container and run a simple PyTorch program to train a neural net.
+libraries, etc. in environments where you do not have root privileges, like an
+HPC account. I will show you how to install PyTorch with GPU support inside of
+a container and run a simple PyTorch program to train a neural net.
 
 ## The Portability Problem
 
 The programs we write depend on external environments, whether that environment
-is explicitly documented or not. A Python program assumes that a Python
-interpreter is available on the system it is run on. A Python program that uses
-set comprehension syntax, e.g.
+is explicitly documented or not. For example, a Python program assumes that a
+Python interpreter is available on the system it is run on.
 
 ```python
-{ x * 2 for x in range(10) }
+def f(n):
+    return 2 * n
 ```
 
-assumes that you're using Python 3. A Python program that uses the function
-`subprocess.run()` assumes that you're using at least version 3.5. A Python
-program that calls `subprocess.run(['grep', '-r', 'foo', './my/directory'])`
-assumes that you're running on a \*nix system where the program `grep` is
-available.
+However, some Python code requires certain versions of Python. For example,
+a Python program that uses set comprehension syntax requires Python 3.
 
-When these dependencies are undocumented, it can become painful to run a
-program in an environment that is different from the one it was developed in.
+```python
+def f(n):
+    return { 2 * x for x in range(n) }
+```
+
+A Python program that uses the function `subprocess.run()` assumes that you're
+using at least version 3.5.
+
+```python
+import subprocess
+
+def f():
+    return subprocess.run(...)
+```
+
+This Python program additionally assumes that ImageMagick is available on the
+system.
+
+```python
+import subprocess
+
+def f():
+    return subprocess.run([
+        'convert', 'photo.jpg', '-resize', '50%', 'photo.png'])
+```
+
+We can go ever deeper down the rabbit hole.
+
+When these sorts of dependencies are undocumented, it can become painful to run
+a program in an environment that is different from the one it was developed in.
 It would be nice to have a way to package a program together with its
 environment, and then run that program on any machine.
 
 ## The Installation Problem
 
-The CRC is a shared scientific computing environment with a shared file system.
-This means that users do not have root privileges and cannot use a package
-manager like `yum` or `apt-get` to install new libraries. If you want to
-install something on the CRC that is not already there, you have a few options:
+A scientific computing enviroment typically provides users with an account and
+a home directory in a shared file system. This means that users do not have
+root privileges and cannot use a package manager like `yum` or `apt-get` to
+install new libraries. If you want to install something that is not already
+there, you have a few options:
 
-* If it is a major library, ask the staff to install/update it for you
+* If it is a major library, ask the cluster's staff to install/update it for you
 * Install it in your home directory (e.g. `pip install --user` for Python
   modules) or other non-standard directory
 * Compile it yourself in your home directory
@@ -87,11 +113,11 @@ with projects that still require the newer versions.
 To take an extreme (but completely real!) example, older versions of the deep
 learning library [DyNet](https://dynet.readthedocs.io/en/latest/) could only be
 built with an old version of GCC, and moreover needed to be compiled on a GPU
-node with the CRC's CUDA module loaded in order to work properly. In May 2018,
-the CRC removed the required version of GCC. This meant that if you wanted to
-install or update DyNet, you needed to re-compile that version of GCC yourself
-*and* figure out how to configure DyNet to build itself with a compiler in a
-non-standard location.
+node with my HPC cluster's CUDA module loaded in order to work properly. In May
+2018, the staff removed the required version of GCC. This meant that if you
+wanted to install or update DyNet, you needed to re-compile that version of GCC
+yourself *and* figure out how to configure DyNet to build itself with a
+compiler in a non-standard location.
 
 ## The Solution: Containers
 
@@ -108,9 +134,8 @@ environment.
 Today we will be talking about an alternative to Docker called Singularity,
 which is more suitable for scientific computing environments (Docker is better
 suited for things like cloud applications, and there are reasons why it would
-not be ideal for a shared environment like the CRC). The CRC currently offers
-[Singularity 3.0](https://www.sylabs.io/guides/3.0/user-guide/), which is
-available via the `singularity` command.
+not be ideal for a shared scientific computing environment). Singularity is
+customarily available via the `singularity` command.
 
 Singularity containers are instantiated from **images**, which are files that
 define the container's environment. The container's "root" file system is
@@ -126,11 +151,10 @@ virtually all major libraries, getting a pre-made image for X is as simple as
 Googling "X docker" and taking note of the name of the image.
 
 Also, because your program's environment is self-contained, it is not affected
-by changes to the CRC's software and is no longer susceptible to "software
-rot." There is also no longer a need to rely on the CRC's modules via `module
-load`. Because the container is portable, it will also run just as well on your
-local machine as on the CRC. In the age of containers, "it runs on my machine"
-is no longer an excuse.
+by changes to the HPC cluster's software and is no longer susceptible to
+"software rot." Because the container is portable, it will also run just as
+well on your local machine as on the HPC cluster. In the age of containers,
+"it runs on my machine" is no longer an excuse.
 
 ## Basic Workflow
 
@@ -141,18 +165,18 @@ command `singularity build`.
 
 Building an image file does require root privileges, so it is most convenient
 to build the image on your local machine or workstation and then copy it to
-your `/scratch365` directory in the CRC. The reason it requires root is because
-the kernel is shared, and user permissions are implemented in the kernel. So if
-you want to do something in the container as root, you actually need to *be*
-root on the host when you do it.
+your HPC cluster via `scp`. The reason it requires root is because the kernel
+is shared, and user permissions are implemented in the kernel. So if you want
+to do something in the container as root, you actually need to *be* root on
+the host when you do it.
 
 There is also an option to build it without root privileges. This works by
 sending your definition to a remote server and building the image there, but I
 have had difficulty getting this to work.
 
-Once you've uploaded your image to the CRC, you can submit a batch job that
-runs `singularity exec` with the image file you created and the command you
-want to run. That's it!
+Once you've uploaded your image to your HPC cluster, you can submit a batch
+job that runs `singularity exec` with the image file you created and the
+command you want to run. That's it!
 
 ## A Simple PyTorch Program
 
@@ -164,14 +188,18 @@ depends on the Python modules `torch`, `numpy`, and `matplotlib`.
 
 ## Installing Singularity
 
-[Singularity 3.0](https://www.sylabs.io/guides/3.0/user-guide/index.html)
-is already available on the CRC via the `singularity` command.
+Consult your HPC cluster's documentation or staff to see if it supports
+Singularity. It is normally available via the `singularity` command. The
+documentation for the latest version, 3.2, can be found
+[here](https://www.sylabs.io/guides/3.2/user-guide/).
+
+If Singularity is not installed, consider
+[requesting
+it](https://www.sylabs.io/guides/3.2/user-guide/installation.html#singularity-on-a-shared-resource).
 
 As for installing Singularity locally, the Singularity docs include detailed
 instructions for installing Singularity on major operating systems
-[here](https://www.sylabs.io/guides/3.0/user-guide/installation.html).
-Installing Singularity is not necessary for following the tutorial in real
-time, as I will provide you with pre-built images.
+[here](https://www.sylabs.io/guides/3.2/user-guide/installation.html).
 
 ## Defining an Image
 
@@ -183,7 +211,7 @@ our program depends on more than just PyTorch, let's start with a plain Ubuntu
 image and build up from there.
 
 Let's start with the basic syntax for definition files, which is documented
-[here](https://www.sylabs.io/guides/3.0/user-guide/definition_files.html).
+[here](https://www.sylabs.io/guides/3.2/user-guide/definition_files.html).
 The first part of the file is the header, where we define the base image and
 other meta-information. The only required keyword in the header is `Bootstrap`,
 which defines the type of image being imported. Using `Bootstrap: library`
@@ -207,10 +235,10 @@ while the image is being built, inside of a container as the root user. This
 is typically where you install packages. The `%environment` section defines
 environment variables that are set when the image is instantiated as a
 container. The `%files` section lets you copy files into the image. There are
-[many other types of section](https://www.sylabs.io/guides/3.0/user-guide/definition_files.html#sections).
+[many other types of section](https://www.sylabs.io/guides/3.2/user-guide/definition_files.html#sections).
 
 Let's use the `%post` section to install all of our requirements using
-`apt-get` and `pip3`. 
+`apt-get` and `pip3`.
 
 ```
 %post
@@ -277,29 +305,45 @@ or directory on the host system synonymous with one in the container.
 
 For convenience, Singularity
 [binds a few important directories by
-default](https://www.sylabs.io/guides/3.0/user-guide/bind_paths_and_mounts.html):
+default](https://www.sylabs.io/guides/3.2/user-guide/bind_paths_and_mounts.html):
 
 * Your home directory
 * The current working directory
-* `/tmp`
-* `/proc`
 * `/sys`
-* `/dev`
+* `/proc`
+* others (depending on the version of Singularity)
 
 You can add to or override these settings if you wish using the
-[`--bind` flag](https://www.sylabs.io/guides/3.0/user-guide/bind_paths_and_mounts.html#specifying-bind-paths)
+[`--bind` flag](https://www.sylabs.io/guides/3.2/user-guide/bind_paths_and_mounts.html#specifying-bind-paths)
 to `singularity exec`. This is important to remember if you want to access a
-file that is outside of your home directory on the CRC -- otherwise you may end
-up with cryptic persmission errors.
+file that is outside of your home directory -- otherwise you may end up with
+inexplicable "file or directory does not exist" errors. If you encounter
+cryptic errors when running Singularity, make sure that you have bound all of
+the directories you intend your program to have access to.
 
 It is also important to know that, unlike Docker, environment variables are
-inherited inside the container for convenience.
+inherited inside the container for convenience. This can be a good and a bad
+thing. It is good in that it is often convenient, but it is bad in that the
+containerized program may behave differently on different hosts for apparently
+no reason if the hosts export different environment variables. This behavior
+can be disabled by running Singularity with `--cleanenv`.
+
+Here is an example of when you might want to inherit environment variables.
+By default, if there are multiple GPUs available on a system, PyTorch will
+grab the first GPU it sees (some toolkits grab all of them). However, your
+cluster may allocate a specific GPU for your batch job that is not
+necessarily the one that PyTorch would pick. If PyTorch does not respect
+this assignment, there can be contention among different jobs. You can
+control which GPUs PyTorch has access to using the environment variable
+`CUDA_VISIBLE_DEVICES`. As long as your cluster defines this environment
+variable for you, you do not need to explicitly forward it to the Singularity
+container.
 
 ## Running an Interactive Shell
 
 You can also open up a shell inside the container and run commands there. You
 can `exit` when you're done. Note that since your home directory is
-bind-mounted, the shell inside the container will run your shell's startup file
+bind-mounted, the shell inside the container may run your shell's startup file
 (e.g. `.bashrc`).
 
 ```
@@ -307,40 +351,43 @@ $ singularity shell version-1.sif
 Singularity version-1.sif:~/singularity-tutorial/examples/xor> python3 train_xor.py
 ```
 
-## Running an Image on the CRC
+Again, this an instance of the host environment leaking into the container in
+a potentially unexpected way that you should be mindful of.
 
-Let's try running the same image on the CRC. Log in to one of the frontends
-using `ssh -X`. The `-X` is necessary to get the plot to appear.
+## Running an Image
 
-```bash
-ssh -X yournetid@crcfe01.crc.nd.edu
-```
+At this point, you may wish to follow along with the tutorial on a system where
+Singularity is installed, either on a personal workstation or on an HPC
+account.
 
-Then download the image to your `/scratch365` directory. One gotcha is that the
-`.sif` file *must* be stored on the scratch365 device for Singularity to work.
-
-```bash
-singularity pull /scratch365/$USER/version-1.sif library://brian/default/singularity-tutorial:version-1
-```
-
-Next, download the code to your home directory.
+You can pull the first tutorial image like so:
 
 ```bash
-git clone https://github.com/bdusell/singularity-tutorial.git ~/singularity-tutorial
+singularity pull version-1.sif library://brian/default/singularity-tutorial:version-1
 ```
 
-Run the program.
+Next, clone this repository.
 
 ```bash
-cd ~/singularity-tutorial/examples/xor
-singularity exec /scratch365/$USER/version-1.sif python3 examples/xor/train_xor.py
+git clone https://github.com/bdusell/singularity-tutorial.git
 ```
 
-You should get the same plot from before to show up. Note that it is not
-possible to do this using the Python installations provided by the CRC, since
-they do not include Tk, which is required by matplotlib. I have found this
-extremely useful for making plots from data I have stored on the CRC without
-needing to download the data to another machine.
+Run the program like this:
+
+```bash
+cd singularity-tutorial/examples/xor
+singularity exec ../../../version-1.sif python3 examples/xor/train_xor.py
+```
+
+This program is running the `python3` executable that exists inside the image
+`version-1.sif`. It is *not* running the `python3` executable on the host.
+Crucially, the host does not even need to have `python3` installed.
+
+You should get the same plot from before to show up. This would not have been
+possible using the software provided on my own HPC cluster, since its Python
+installation does not include Tk, which is required by matplotlib. I have
+found this extremely useful for making plots from data I have stored on the
+cluster without needing to download the data to another machine.
 
 ## A Beefier PyTorch Program
 
@@ -409,8 +456,8 @@ We run the image like before, except that we have to add the `--nv` flag to
 allow the container to access the Nvidia drivers on the host in order to use
 the GPU. That's all we need to get GPU support working. Not bad!
 
-This program takes a while to run. Do not run it on the CRC frontend. When I
-run one epoch on my workstation (which has a GPU), the output looks like this:
+This program takes a while to run. When I run one epoch on my workstation
+(which has a GPU), the output looks like this:
 
 ```
 $ singularity exec --nv version-2.sif python3 main.py --cuda --epochs 1
@@ -436,42 +483,10 @@ $ singularity exec --nv version-2.sif python3 main.py --cuda --epochs 1
 =========================================================================================
 ```
 
-## Running a GPU program on the CRC
-
-Finally, I will show you how to run this program on the CRC's GPU queue.
-This image is too big to be hosted on the Singularity Library, so you need to
-copy it from my home directory. We will address this size issue later on.
-
-```bash
-cp /afs/crc.nd.edu/user/b/bdusell1/Public/singularity-tutorial/version-2.sif /scratch365/$USER/version-2.sif
-```
-
-Then, submit a job to run this program on the GPU queue. For convenience, I've
-included a script to run the submission command.
-
-```bash
-cd ~/singularity-tutorial/examples/language-model
-bash submit-gpu-job-version-2.bash
-```
-
-Check back in a while to verify that the job completed successfully. The output
-will be written to `output-version-2.txt`.
-
-Something you should keep in mind is that, by default, if there are multiple
-GPUs available on the system, PyTorch grabs the first one it sees (some
-toolkits grab all of them). However, the CRC assigns each job its own GPU,
-which is not necessarily the one that PyTorch would pick. If PyTorch does not
-respect this assignment, there can be contention among different jobs. You can
-control which GPUs PyTorch has access to using the environment variable
-`CUDA_VISIBLE_DEVICES`, which can be set to a space-separated list of numbers.
-The CRC now sets this environment variable automatically, and since Singularity
-inherits environment variables, you actually don't need to do anything. It's
-just something you should know about, since there is potential for abuse.
-
 ## Separating Python modules from the image
 
-Now that you know the basics of how to run a GPU job on the CRC, here's a tip
-for managing Python modules. There's a problem with our current workflow.
+Now that you know the basics of how to run a GPU-accelerated program, here's a
+tip for managing Python modules. There's a problem with our current workflow.
 Every time we want to install a new Python library, we have to re-build the
 image. We should only need to re-build the image when we install a package with
 `apt-get` or inherit from a different base image -- in other words, actions
@@ -480,16 +495,16 @@ libraries in the current working directory using a **package manager**, and
 rely on the image only for the basic Ubuntu/CUDA/Python environment.
 
 [Pipenv](https://github.com/pypa/pipenv) is a package manager for Python. It's
-like the Python equivalent of npm (Node.js package manager) or gem (Ruby package
-manager). It keeps track of the libraries your project depends on in text files
-named `Pipfile` and `Pipfile.lock`, which you can commit to version control in
-lieu of the massive libraries themselves. Every time you run `pipenv install
-<library>`, Pipenv will update the `Pipfile` and download the library locally.
-The important thing is that, rather than putting the library in a system-wide
-location, Pipenv installs the library in a *local* directory called `.venv`.
-The benefit of this is that the libraries are stored *with* your project, but
-they are not part of the image. The image is merely the vehicle for running
-them.
+like the Python equivalent of npm (Node.js package manager) or Bundler (Ruby
+package manager). It keeps track of the libraries your project depends on in
+text files named `Pipfile` and `Pipfile.lock`, which you can commit to version
+control in lieu of the massive libraries themselves. Every time you run
+`pipenv install <library>`, Pipenv will update the `Pipfile` and download the
+library locally. The important thing is that, rather than putting the library
+in a system-wide location, Pipenv installs the library in a *local* directory
+called `.venv`. The benefit of this is that the libraries are stored *with*
+your project, but they are not part of the image. The image is merely the
+vehicle for running them.
 
 Here is the
 [new version](examples/language-model/version-3.def)
@@ -526,17 +541,17 @@ From: nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04
     export PIPENV_VENV_IN_PROJECT=1
 ```
 
-On the CRC, download the new image.
+Download the new image.
 
 ```bash
-singularity pull /scratch365/$USER/version-3.sif library://brian/default/singularity-tutorial:version-3
+singularity pull version-3.sif library://brian/default/singularity-tutorial:version-3
 ```
 
 Now we can use the container to install our Python libraries into the current
 working directory. We do this by running `pipenv install`.
 
 ```bash
-singularity exec /scratch365/$USER/version-3.sif pipenv install torch numpy matplotlib
+singularity exec version-3.sif pipenv install torch numpy matplotlib
 ```
 
 [![asciicast](https://asciinema.org/a/cywx1Ta3XpO89DvwaE0MaogDo.svg)](https://asciinema.org/a/cywx1Ta3XpO89DvwaE0MaogDo)
@@ -546,21 +561,21 @@ libraries in a directory named `.venv`. The benefit of installing packages like
 this is that you can install new ones without re-building the image, and you
 can re-use the image for multiple projects. The `.sif` file is smaller too.
 
-When you're done, you can test it out by submitting a GPU job. If you look at
-the script, you will see that we replace the `python3` command with `pipenv run
-python`, which runs the program inside the environment that Pipenv manages.
+When you're done, you can test it out using the following command:
 
 ```bash
-bash submit-gpu-job-version-3.bash
+singularity exec --nv version-3.sif pipenv run python main.py --cuda --epochs 6
 ```
+
+Notice that we have replaced the command `python3` with `pipenv run python`.
+This command uses the Python executable managed by Pipenv, which in turn exists
+inside of the container.
 
 ## Docker
 
 If this container stuff interests you, you might be interested in
 [Docker](https://www.docker.com/)
-too. Docker is not available on the CRC, but it may prove useful elsewhere.
-For example, I've used it to compile PyTorch from source before. Docker has
-its own set of idiosyncrasies, but a good place to start is the
+too. Docker has its own set of idiosyncrasies, but a good place to start is the
 [Docker documentation](https://docs.docker.com/).
 
 This would be a good time to plug my

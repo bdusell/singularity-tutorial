@@ -210,7 +210,7 @@ container. The `%files` section lets you copy files into the image. There are
 [many other types of section](https://www.sylabs.io/guides/3.0/user-guide/definition_files.html#sections).
 
 Let's use the `%post` section to install all of our requirements using
-`apt-get` and `pip3`. 
+`apt-get` and `pip3`.
 
 ```
 %post
@@ -436,7 +436,7 @@ $ singularity exec --nv version-2.sif python3 main.py --cuda --epochs 1
 =========================================================================================
 ```
 
-## Running a GPU program on the CRC
+## Running a GPU Program on the CRC
 
 Finally, I will show you how to run this program on the CRC's GPU queue.
 This image is too big to be hosted on the Singularity Library, so you need to
