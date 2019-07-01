@@ -24,7 +24,9 @@ such as CUDA, as simple as pulling a pre-built image. My tutorial will include
 a walkthrough of using Singularity to run a GPU-accelerated PyTorch program on
 an HPC cluster, as well as general tips for setting up an efficient workflow.
 
-Slides available at [slides.pdf](slides.pdf).
+Watch the screencast [here](https://www.youtube.com/watch?v=D5pe4ewtDe8).
+
+Slides available [here](slides.pdf).
 
 ## Introduction
 
