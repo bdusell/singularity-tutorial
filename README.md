@@ -259,8 +259,8 @@ Let's use the `%post` section to install all of our requirements using
         python3 \
         python3-tk \
         python3-pip \
-	python3-distutils \
-	python3-setuptools
+        python3-distutils \
+        python3-setuptools
     # Reduce the size of the image by deleting the package lists we downloaded,
     # which are useless now.
     rm -rf /var/lib/apt/lists/*
@@ -446,7 +446,7 @@ From: nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04
         python3 \
         python3-tk \
         python3-pip \
-	python3-setuptools
+        python3-setuptools
     # Reduce the size of the image by deleting the package lists we downloaded,
     # which are useless now.
     rm -rf /var/lib/apt/lists/*
