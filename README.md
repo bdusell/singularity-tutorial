@@ -244,17 +244,25 @@ Let's use the `%post` section to install all of our requirements using
 
 ```
 %post
+    # These first few commands allow us to find the python3-pip package later
+    # on.
+    apt-get update -y
+    # Using "noninteractive" mode runs apt-get while ensuring that there are
+    # no user prompts that would cause the `singularity build` command to hang.
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        software-properties-common
+    add-apt-repository universe
     # Downloads the latest package lists (important).
     apt-get update -y
-    # Runs apt-get while ensuring that there are no user prompts that would
-    # cause the build process to hang.
     # python3-tk is required by matplotlib.
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         python3 \
         python3-tk \
-        python3-pip
+        python3-pip \
+	python3-distutils \
+	python3-setuptools
     # Reduce the size of the image by deleting the package lists we downloaded,
-    # which are no longer needed.
+    # which are useless now.
     rm -rf /var/lib/apt/lists/*
     # Install Python modules.
     pip3 install torch numpy matplotlib
@@ -437,7 +445,8 @@ From: nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         python3 \
         python3-tk \
-        python3-pip
+        python3-pip \
+	python3-setuptools
     # Reduce the size of the image by deleting the package lists we downloaded,
     # which are useless now.
     rm -rf /var/lib/apt/lists/*
